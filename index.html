@@ -115,21 +115,7 @@
 
       let hinweis = "";
       
-    
-    if (lenkzeit > 270) {
-        if (pause >= 30) {
-            hinweis = "<br><span style='color:green;'>✔️ Keine Verstöße erkannt – klassische Pause ausreichend (≥ 30 Min).</span>";
-        } else if (pause >= 30) {
-            hinweis = "<br><span style='color:green;'>✔️ Keine Verstöße erkannt – Pause über 30 Minuten ausreichend laut Ausnahme-Regel.</span>";
-        } else if (anrechenbareWenden >= mindestpause161) {
-            hinweis = "<br><span style='color:orange;'>⚠️ Keine klassische Pause, aber ausreichend anrechenbare Wendezeiten laut 1/6-Regel (" + anrechenbareWenden + " min von mindestens " + mindestpause161 + " min)</span>";
-        } else {
-            hinweis = "<br><span style='color:red;'>❌ Verstoß: Lenkzeit über 4:30h ohne ausreichende Pause – auch Wendezeitregel ungenügend!</span>";
-        }
-    } else {
-        hinweis = "<br><span style='color:green;'>✔️ Keine Verstöße erkannt.</span>";
-    }
-
+    if (lenkzeit > 270 && pause < 45) {
         if (pause >= 30) {
             hinweis = "<br><span style='color:green;'>✔️ Keine Verstöße erkannt – Pause über 30 Minuten ausreichend.</span>";
         } else if (anrechenbareWenden >= mindestpause161) {
