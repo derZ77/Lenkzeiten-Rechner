@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#ffffff" name="theme-color"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Berechnung Dienstteil 4.30 h Lenkzeit und 1/6 Regelung</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+    :root {
+      --primary: #0d6efd;
+      --secondary: #f8f9fa;
+      --text: #212529;
+      --border-radius: 10px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--secondary); color: var(--text); }
+    input { width: 70px; padding: 6px; margin: 2px; border-radius: 4px; border: 1px solid #ccc; }
+    label { display: inline-block; width: 180px; margin-top: 10px; }
+    .box { background: white; padding: 30px; border-radius: var(--border-radius); max-width: 650px; margin: 40px auto; box-shadow: var(--shadow); }
+    h2 { text-align: center; color: var(--primary); margin-bottom: 20px; }
+    button { margin-top: 12px; padding: 10px 20px; margin-right: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; } button:hover { background: #0b5ed7; }
+    .result { margin-top: 20px; font-weight: bold; }
+    .section { margin-top: 15px; }
+    .signature { margin-top: 40px; font-style: italic; text-align: right; color: #6c757d; }
+  </style>
+</head>
+<body>
+<div class="box">
+<h2>Berechnung Dienstteil 4.30 h Lenkzeit und 1/6 Regelung</h2>
+<div>
+<label>Dienstbeginn:</label><input id="start" type="time" value="05:12"/><br/>
+<label>Dienstende:</label><input id="end" type="time" value="13:48"/><br/>
+<br/>
+<div class="section">
+<label>Stand- und Wartezeiten über 1min (max. 20):</label><br/>
+<div id="standzeiten"><input class="stand" placeholder="1" type="number"/><input class="stand" placeholder="2" type="number"/><input class="stand" placeholder="3" type="number"/><input class="stand" placeholder="4" type="number"/><input class="stand" placeholder="5" type="number"/><input class="stand" placeholder="6" type="number"/><input class="stand" placeholder="7" type="number"/><input class="stand" placeholder="8" type="number"/><input class="stand" placeholder="9" type="number"/><input class="stand" placeholder="10" type="number"/><input class="stand" placeholder="11" type="number"/><input class="stand" placeholder="12" type="number"/><input class="stand" placeholder="13" type="number"/><input class="stand" placeholder="14" type="number"/><input class="stand" placeholder="15" type="number"/><input class="stand" placeholder="16" type="number"/><input class="stand" placeholder="17" type="number"/><input class="stand" placeholder="18" type="number"/><input class="stand" placeholder="19" type="number"/><input class="stand" placeholder="20" type="number"/></div>
+</div>
+<div class="section">
+<label>Wendezeiten / Endpunkte (max. 20):</label><br/>
+<div id="wendezeiten"><input class="wende" placeholder="1" type="number"/><input class="wende" placeholder="2" type="number"/><input class="wende" placeholder="3" type="number"/><input class="wende" placeholder="4" type="number"/><input class="wende" placeholder="5" type="number"/><input class="wende" placeholder="6" type="number"/><input class="wende" placeholder="7" type="number"/><input class="wende" placeholder="8" type="number"/><input class="wende" placeholder="9" type="number"/><input class="wende" placeholder="10" type="number"/><input class="wende" placeholder="11" type="number"/><input class="wende" placeholder="12" type="number"/><input class="wende" placeholder="13" type="number"/><input class="wende" placeholder="14" type="number"/><input class="wende" placeholder="15" type="number"/><input class="wende" placeholder="16" type="number"/><input class="wende" placeholder="17" type="number"/><input class="wende" placeholder="18" type="number"/><input class="wende" placeholder="19" type="number"/><input class="wende" placeholder="20" type="number"/></div>
+</div>
+<button onclick="berechnen()">Berechnen</button>
+<button onclick="exportPDF()">PDF Export</button>
+</div>
+<div class="result" id="output-box">
+<div id="output"></div>
+<div class="signature">
+        ____________________________<br/>
+        Jörg Ziegler<br/>
+        16.06.2025
+      </div>
+</div>
+</div>
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker registriert:', reg.scope))
+          .catch(err => console.log('Service Worker Fehler:', err));
+      });
+    }
+  </script>
+<script>
+function berechnen() {
+  const toMinutes = t => {
+    let [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const sumInputs = className =>
+    Array.from(document.getElementsByClassName(className))
+      .map(input => Number(input.value) || 0)
+      .reduce((a, b) => a + b, 0);
+
+  let start = toMinutes(document.getElementById("start").value);
+  let end = toMinutes(document.getElementById("end").value);
+  let stand = sumInputs("stand");
+  let wendezeiten = Array.from(document.getElementsByClassName("wende")).map(input => Number(input.value) || 0);
+  let wende = wendezeiten.reduce((a, b) => a + b, 0);
+
+  let arbeitszeit = end - start;
+  if (arbeitszeit < 0) arbeitszeit = 0;
+
+  let lenkzeit = arbeitszeit - stand - wende;
+  if (lenkzeit < 0) lenkzeit = 0;
+
+  let anrechenbareWenden = wendezeiten.filter(min => min >= 11).reduce((a, b) => a + b, 0);
+  let mindestpause161 = Math.ceil(lenkzeit / 6);
+
+  let hinweis = "";
+  if (lenkzeit > 270) {
+    if (anrechenbareWenden >= mindestpause161) {
+      hinweis = "<br><span style='color:green;'>✔️ 1/6-Regel erfüllt – ausreichend Wendezeiten vorhanden.</span>";
+    } else {
+      hinweis = "<br><span style='color:red;'>❌ Lenkzeit über 4:30h – nicht genügend Wendezeiten für 1/6-Regel!</span>";
+    }
+  } else {
+    hinweis = "<br><span style='color:green;'>✔️ Lenkzeit unter 4:30h – keine Pause erforderlich.</span>";
+  }
+
+  const toHHMM = min => {
+    let h = Math.floor(min / 60);
+    let m = min % 60;
+    return \`\${h.toString().padStart(2, "0")}:\${m.toString().padStart(2, "0")} h\`;
+  };
+
+  const ergebnisHTML = \`
+    Dienstbeginn: \${document.getElementById("start").value}<br>
+    Dienstende: \${document.getElementById("end").value}<br><br>
+    Arbeitszeit: \${toHHMM(arbeitszeit)}<br>
+    Lenkzeit: \${toHHMM(lenkzeit)}<br>
+    Stand- und Wartezeiten: \${toHHMM(stand)}<br>
+    Wendezeiten / Endpunkte: \${toHHMM(wende)}\${hinweis}
+  \`;
+
+  document.getElementById("output").innerHTML = ergebnisHTML;
+}
+</script></body>
+</html>
